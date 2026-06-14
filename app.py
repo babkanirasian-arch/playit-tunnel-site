@@ -12,9 +12,19 @@ claim_url = None
 
 def run_playit():
     global playit_process, claim_url, output_log
-    # Скачиваем агент прямо при запуске сайта в системную папку
-    os.system("curl -sL https://playit.cloud -o playit && chmod +x playit")
+    output_log.append("Скачивание агента...")
     
+    # Скачиваем файл напрямую
+    os.system("curl -sL https://playit.cloud -o playit")
+    os.system("chmod +x playit")
+    
+    # Небольшая пауза, чтобы файл точно записался на диск
+    time.sleep(2)
+    
+    if not os.path.exists("./playit"):
+        output_log.append("❌ Ошибка: Файл не успел скачаться. Пробуем еще раз...")
+        return
+
     try:
         playit_process = subprocess.Popen(["./playit"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         for line in iter(playit_process.stdout.readline, ''):
@@ -24,7 +34,7 @@ def run_playit():
                 match = re.search(r'(https://playit\.gg/claim/\S+)', clean_line)
                 if match: claim_url = match.group(1)
     except Exception as e:
-        output_log.append(f"Ошибка: {str(e)}")
+        output_log.append(f"Ошибка запуска: {str(e)}")
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -71,5 +81,4 @@ def stop():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    # Render требует порт 10000 для Python-приложений
     app.run(host='0.0.0.0', port=10000)
