@@ -2,6 +2,7 @@ import os
 import re
 import subprocess
 import threading
+import urllib.request
 from flask import Flask, render_template_string, redirect, url_for
 
 app = Flask(__name__)
@@ -11,9 +12,21 @@ claim_url = None
 
 def run_playit():
     global playit_process, claim_url, output_log
-    
-    # Вызываем агент напрямую из системы
-    executable = "playit"
+    executable = "./playit"
+
+    # Безопасное скачивание по частям без длинных строк
+    if not os.path.exists(executable):
+        output_log.append("Скачивание компонента туннеля...")
+        part1 = "https://github.com"
+        part2 = "releases/latest/download/playit-linux-amd64"
+        full_url = part1 + part2
+        try:
+            urllib.request.urlretrieve(full_url, executable)
+            os.chmod(executable, 0o755)
+            output_log.append("✅ Файл успешно загружен!")
+        except Exception as e:
+            output_log.append(f"❌ Ошибка скачивания: {str(e)}")
+            return
 
     try:
         output_log.append("Запуск агента...")
