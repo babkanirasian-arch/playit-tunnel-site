@@ -2,7 +2,6 @@ import os
 import re
 import subprocess
 import threading
-import time
 from flask import Flask, render_template_string, redirect, url_for
 
 app = Flask(__name__)
@@ -12,21 +11,17 @@ claim_url = None
 
 def run_playit():
     global playit_process, claim_url, output_log
-    output_log.append("Скачивание агента...")
     
-    # Скачиваем файл напрямую
-    os.system("curl -sL https://playit.cloud -o playit")
-    os.system("chmod +x playit")
-    
-    # Небольшая пауза, чтобы файл точно записался на диск
-    time.sleep(2)
-    
-    if not os.path.exists("./playit"):
-        output_log.append("❌ Ошибка: Файл не успел скачаться. Пробуем еще раз...")
+    # Файл теперь всегда скачивается заранее в системную папку /opt/render/project/src/playit
+    executable = "./playit"
+
+    if not os.path.exists(executable):
+        output_log.append("❌ КРИТИЧЕСКАЯ ОШИБКА: Файл playit не найден на сервере!")
         return
 
     try:
-        playit_process = subprocess.Popen(["./playit"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        output_log.append("Запуск агента...")
+        playit_process = subprocess.Popen([executable], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         for line in iter(playit_process.stdout.readline, ''):
             clean_line = line.strip()
             output_log.append(clean_line)
@@ -69,7 +64,7 @@ def index():
 def start():
     global playit_process, claim_url, output_log
     if not (playit_process and playit_process.poll() is None):
-        output_log = ["Запуск..."]
+        output_log = ["Инициализация..."]
         claim_url = None
         threading.Thread(target=run_playit, daemon=True).start()
     return redirect(url_for('index'))
