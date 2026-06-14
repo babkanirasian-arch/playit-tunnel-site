@@ -12,12 +12,8 @@ claim_url = None
 def run_playit():
     global playit_process, claim_url, output_log
     
-    # Файл теперь всегда скачивается заранее в системную папку /opt/render/project/src/playit
-    executable = "./playit"
-
-    if not os.path.exists(executable):
-        output_log.append("❌ КРИТИЧЕСКАЯ ОШИБКА: Файл playit не найден на сервере!")
-        return
+    # Вызываем агент напрямую из системы
+    executable = "playit"
 
     try:
         output_log.append("Запуск агента...")
